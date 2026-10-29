@@ -1,0 +1,58 @@
+name: Publish GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Publish VeriMart Tagged Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run unit and widget tests
+        run: flutter test
+
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          name: VeriMart Marketplace Release ${{ github.ref_name }}
+          body: |
+            ## VeriMart Marketplace Release ${{ github.ref_name }}
+
+            ### Installation Instructions:
+            1. Download `app-release.apk` attached below to your Android device.
+            2. Open the downloaded `.apk` file to install VeriMart Marketplace.
+            3. If prompted, enable "Install from unknown sources" in your Android settings.
+            4. Launch **VeriMart Marketplace** and enjoy shopping!
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
